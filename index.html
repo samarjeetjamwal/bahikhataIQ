@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bahi-Khata Scanner &amp; CVP Reports</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#111827;--mut:#4b5563;--pri:#0b5cad;--ok:#15803d;--bad:#b91c1c;--wrn:#b45309;--line:#cbd5e1}
+*{box-sizing:border-box}body{margin:0;font:15px/1.4 system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#0f2a4a;color:#fff;padding:10px 12px;position:sticky;top:0;z-index:5}
+header h1{font-size:17px;margin:0 0 6px}.bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+select,input,button,textarea{font:inherit;padding:7px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);max-width:100%}
+button{cursor:pointer;background:var(--pri);color:#fff;border-color:var(--pri)}button.g{background:#fff;color:var(--pri)}button.r{background:var(--bad);border-color:var(--bad)}
+.btn-link{display:inline-block;text-decoration:none;padding:7px 10px;border:1px solid var(--pri);border-radius:6px;background:#fff;color:var(--pri);font-weight:600;cursor:pointer}
+.btn-link:hover{background:#eff6ff}
+header select{font-weight:600}.badge{padding:3px 8px;border-radius:12px;font-size:12px;background:#e5e7eb;color:#111}
+nav{display:flex;overflow-x:auto;background:#fff;border-bottom:2px solid var(--line)}nav button{background:none;color:var(--ink);border:0;border-bottom:3px solid transparent;border-radius:0;white-space:nowrap}nav button.on{border-color:var(--pri);color:var(--pri);font-weight:700}
+main{padding:10px;max-width:1150px;margin:auto}.tab{display:none}.tab.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
+.card h2,.card h3{margin:0 0 8px;font-size:16px}.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.kpi{font-size:22px;font-weight:700}.lbl{font-size:12px;color:var(--mut)}
+table{border-collapse:collapse;width:100%}td,th{padding:5px 6px;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:middle}th{background:#eef2f7;font-size:12px}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}tr.t td{font-weight:700;border-top:2px solid #111;background:#f8fafc}
+.sc{overflow-x:auto}.sc input,.sc select{padding:4px;min-width:70px}.sc input.sm{min-width:45px;width:55px}.sc input.am{width:105px}
+.bd{padding:3px 9px;border-radius:12px;font-size:12px}.bd.F{background:#1d4ed8;border-color:#1d4ed8}.bd.V{background:#c2410c;border-color:#c2410c}
+.pos{color:var(--ok)}.neg{color:var(--bad)}.two{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.pg{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}.pg img{max-width:100%;max-height:300px;border:1px solid var(--line)}.pg textarea{width:100%;height:220px;font-family:monospace}
+.mx td,.mx th{text-align:center;padding:3px 5px;font-size:12px}.mx td:first-child{text-align:left}.mx td.cur,.mx th.cur{background:#fef3c7}.mx td[data-mx]{cursor:pointer}
+.pg img{cursor:zoom-in}.pg img.zm{max-height:none;cursor:zoom-out}.sw{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #eee}.warn{background:#fef3c7;border:1px solid #f59e0b;padding:8px;border-radius:6px;margin:6px 0}
+.rh{display:none}.rh-in{border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px;line-height:1.5}.rh-in h1{margin:0;font-size:22px}#pv{display:none}#pv h2{font-size:15px;margin:16px 0 6px;border-bottom:1px solid #999}
+@media print{header,nav,.noprint{display:none!important}body{background:#fff}.card{border:0}.rh{display:block}body.pv main,body.pv footer{display:none!important}body.pv #pv{display:block;padding:8px}#pv .pb{page-break-before:always}#pv table{font-size:12px}#pv .kpi{font-size:16px}.sign{display:flex;justify-content:space-between;margin-top:50px}.sign div{border-top:1px solid #000;width:40%;text-align:center;padding-top:4px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" onerror="window.NOOCR=1"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js" onerror="window.NOCH=1"></script>
+</head><body>
+<header>
+<h1>📒 Bahi-Khata Scanner &amp; CVP Reports <span class="badge" id="net"></span></h1>
+<div class="bar">
+<select id="biz" aria-label="Business Type"></select>
+<select id="cur"><option>₹</option><option>$</option><option>£</option><option>€</option><option>Rs </option></select>
+<button id="bPdf">📄 Export PDF Report</button>
+<button class="g" id="bExp">Export Backup .json</button>
+<button class="g" id="bImp">Import Backup</button>
+<button class="g" id="bCsv">Export Ledger .csv</button>
+<button class="r" id="bRst">Reset All Data</button>
+<button id="bSmp">Load Sample Ledger</button>
+<input type="file" id="impf" accept=".json" hidden>
+</div></header>
+<nav id="nav"></nav>
+<main>
+<section class="tab" id="t0">
+<div class="card noprint"><h2>Business Profile <span class="lbl">(printed on every report and in the PDF)</span></h2>
+<div class="grid">
+<label class="lbl">Business name<br><input data-pf="name" style="width:100%" placeholder="e.g. Sharma Traders"></label>
+<label class="lbl">Owner / Proprietor<br><input data-pf="owner" style="width:100%"></label>
+<label class="lbl">Phone<br><input type="tel" data-pf="phone" style="width:100%"></label>
+<label class="lbl">Email<br><input type="email" data-pf="email" style="width:100%"></label>
+<label class="lbl">GSTIN<br><input data-pf="gstin" maxlength="15" style="width:100%;text-transform:uppercase" placeholder="03ABCDE1234F1Z5"><span id="gmsg"></span></label>
+<label class="lbl">PAN<br><input data-pf="pan" maxlength="10" style="width:100%;text-transform:uppercase"></label></div>
+<label class="lbl">Business address<br><textarea data-pf="address" rows="3" style="width:100%"></textarea></label></div>
+<div class="card noprint"><h2>1. Scan ledger pages or upload .txt document</h2>
+<div class="bar"><select id="lang"><option value="eng">English</option><option value="hin">Hindi</option><option value="pan">Punjabi (Gurmukhi)</option><option value="eng+hin">English + Hindi (Hinglish)</option><option value="eng+pan">English + Punjabi</option></select>
+<label><input type="checkbox" id="thr" checked> Local OCR: enhance (grayscale + threshold)</label></div>
+<div class="bar" style="margin-top:6px"><label>Ink <select id="ink"><option value="auto">Auto</option><option value="faint">Faint pencil / thin pen</option><option value="bold">Bold / dark pen</option></select></label>
+<label>Mode <select id="mode"><option value="thorough">Thorough (2 passes, slower)</option><option value="fast">Fast</option></select></label></div>
+<p class="lbl">Reading runs entirely inside this browser: nothing is uploaded. Tips: flat page, even light, fill the frame, no shadows. If a page reads badly, change Ink and press Re-read, rotate it, or upload a .txt file from Rewind AI.</p>
+<div id="drop" style="border:2px dashed #64748b;border-radius:10px;text-align:center;padding:16px;margin:8px 0;background:#f8fafc">
+<b>Add PNG / JPEG / TXT ledger pages</b><div class="lbl">Drag &amp; drop images or .txt files here, paste (Ctrl+V), or use a button</div>
+<div class="bar" style="justify-content:center;margin-top:8px">
+<button type="button" id="pick">📁 Choose files (PNG / JPEG / TXT)</button>
+<button type="button" id="cam" class="g">📷 Take photo</button>
+<button type="button" id="impTxt" class="g">📄 Upload .txt Document</button>
+</div>
+<div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)">
+<div class="lbl" style="margin-bottom:6px">Not convenient to scan handwritten pages here? Convert your JPEG/PNG using Rewind AI, download the .txt document, and upload or paste it here:</div>
+<div class="bar" style="justify-content:center">
+<a href="https://rewind.ai/ocr/" target="_blank" rel="noopener noreferrer" class="btn-link">🌐 Or Scan/Read/Download using Rewind AI</a>
+<button type="button" class="g" id="pasteTxt">📋 Paste Rewind AI Text</button>
+</div>
+</div>
+<input type="file" id="files" accept="image/png,image/jpeg,.png,.jpg,.jpeg,.jfif,.txt,.text,text/plain" multiple hidden>
+<input type="file" id="camf" accept="image/*" capture="environment" hidden>
+<input type="file" id="txtf" accept=".txt,.text,.md,text/plain" multiple hidden></div>
+<div id="ocrmsg" class="lbl"></div><div id="pages" class="pg"></div>
+<canvas id="cv" hidden></canvas></div>
+<div class="card noprint"><h2>2. Quick Cash-Book Entry</h2>
+<div class="bar"><input type="date" id="qd"><input id="qt" placeholder="e.g. Sale / Kiraya / Majdoori" size="22"><input id="qa" type="number" step="any" placeholder="Amount" style="width:110px">
+<select id="qc"></select><select id="qm"><option>Cash</option><option>Bank/UPI</option><option>Credit/Udhaar</option></select>
+<select id="qg"><option value="0">No GST</option><option>5</option><option>12</option><option>18</option><option>28</option></select>
+<label><input type="checkbox" id="qi"> GST incl.</label><button id="qb">Add</button></div>
+<p class="lbl">Category is auto-suggested from keywords (Bikri, Udhaar, Kiraya, Bijli, Tankhwa, Majdoori, Bhada, Kharida…). Change it later in the Ledger tab.</p></div>
+<div class="card"><h2>Opening Balances (single-entry → balance sheet bridge)</h2>
+<div class="grid" id="ob"></div><p class="lbl">Opening Capital is calculated automatically: Assets − Liabilities. Closing stock defaults to opening stock if left blank.</p>
+<div><b>Opening Capital: </b><span id="ocap"></span></div></div>
+</section>
+
+<section class="tab" id="t1"><div class="rh"></div><div class="card"><h2>Master Ledger &amp; Page Log</h2>
+<div class="bar noprint"><input type="date" id="f_from"><input type="date" id="f_to"><input id="f_pg" placeholder="Page" size="5">
+<select id="f_mode"><option value="">All modes</option><option>Cash</option><option>Bank/UPI</option><option>Credit/Udhaar</option></select>
+<select id="f_cat"></select><input id="f_q" placeholder="Search text"></div>
+<div class="sc"><table><thead><tr><th>Date</th><th>Pg</th><th>Description</th><th>Category</th><th>Cost type</th><th>Mode</th><th class="n">Amount</th><th>GST</th><th>Incl</th><th></th></tr></thead><tbody id="lt"></tbody></table></div>
+<p id="lsum" class="lbl"></p></div></section>
+
+<section class="tab" id="t2"><div class="rh"></div><div class="card"><h2>Income Statement (Profit &amp; Loss)</h2><table id="pl"></table></div>
+<div class="card"><h2>GST Summary</h2><div class="grid" id="gst"></div></div></section>
+<section class="tab" id="t3"><div class="rh"></div><div class="card"><h2>Balance Sheet</h2><div id="bsb"></div><div class="two" id="bs"></div></div></section>
+
+<section class="tab" id="t4"><div class="rh"></div><div class="card"><h2>Fixed vs Variable Costs</h2>
+<p class="lbl">Flip a switch to test a what-if classification. Totals feed the CVP tab live.</p>
+<div class="two"><div><h3 style="color:#1d4ed8">Fixed Costs <span id="ft"></span></h3><div id="fl"></div></div><div><h3 style="color:#c2410c">Variable Costs <span id="vt"></span></h3><div id="vl"></div></div></div></div>
+<div class="card"><h3>Intersect Matrix: Category (row) ∩ Business Type (column) → F / V</h3>
+<p class="lbl">Like Excel's space-intersect operator: the default behaviour of a cost = the cell where its row and the selected business column cross (highlighted). Click a cell to cycle F → V → blank (not used).</p>
+<div class="sc"><table class="mx" id="mx"></table></div></div></section>
+
+<section class="tab" id="t5"><div class="rh"></div><div class="card"><h2>CVP, Break-Even &amp; Target Profit</h2>
+<div class="bar noprint"><label>Avg unit price <input type="number" id="up" step="any" style="width:100px"></label><label>Avg unit variable cost (optional) <input type="number" id="uv" step="any" style="width:100px"></label><label>Desired profit <input type="number" id="gp" step="any" style="width:120px"></label></div>
+<div class="grid" id="cv2" style="margin-top:10px"></div></div>
+<div class="card"><h3>Break-Even &amp; Profit Chart</h3><div id="chartnote" class="warn" hidden></div><div style="height:340px"><canvas id="chart"></canvas></div></div></section>
+<footer style="text-align:center;padding:12px" class="lbl">
+<div>Ledger data stays in this browser (localStorage). Nothing is uploaded anywhere.</div>
+<div style="margin-top:4px;font-weight:600;color:var(--ink)">This Digital tool created and designed by Samar Jeet Jamwal</div>
+</footer>
+</main>
+<div id="pv"></div>
+<script>
+const BIZ=['Small Manufacturer','Distributor & Wholesaler','Contractor & Builder','Restaurant & Hotel','Retail Shop','Service Business'];
+const SHORT=['Mfr','Distr','Contr','Rest','Retail','Svc'];
+// name:[type, matrix string for the 6 businesses: F fixed, V variable, 1 income applicable, . not used]
+const C={
+'Product Sales':['Sale','11..1.'],'Contract / Running Bill Receipts':['Sale','..1...'],'Food & Room Sales':['Sale','...1..'],'Service Fees':['Sale','.....1'],'Other Income':['Sale','111111'],
+'Raw Material / Ingredients':['Purchase','V.VV..'],'Goods Purchased for Resale':['Purchase','.V..V.'],'Packaging':['Purchase','VV.VV.'],
+'Direct / Job-site Labour':['Purchase','V.V...'],'Sub-contractor Charges':['Purchase','..V...'],'Freight / Bhada':['Purchase','VVV.V.'],
+'Delivery & Commission':['Purchase','.V.VVV'],'Fuel & Power (Production)':['Purchase','V.....'],'Service Consumables / Travel':['Purchase','.....V'],
+'Rent (Kiraya)':['Expense','FFFFFF'],'Salaries (Fixed Staff)':['Expense','FFFFFF'],'Electricity (Bijli)':['Expense','FFFFFF'],'Loan Interest / EMI':['Expense','FFFFFF'],
+'Insurance':['Expense','FFFFFF'],'Repairs & Maintenance':['Expense','FFFFFF'],'Telephone & Internet':['Expense','FFFFFF'],'Advertising':['Expense','FFFFFF'],
+'Licences & Professional Fees':['Expense','FFFFFF'],'Misc Expenses':['Expense','FFFFFF'],
+'Fixed Asset Purchase':['Asset','111111'],'Capital Introduced':['Capital','111111'],'Loan Received':['Loan','111111'],'Loan Repaid':['LoanRepay','111111'],
+'Drawings (Owner)':['Drawings','111111'],'Udhaar Collected':['Collect','111111'],'Creditors Paid':['PayCr','111111']};
+const PUR=['Raw Material / Ingredients','Goods Purchased for Resale','Raw Material / Ingredients','Raw Material / Ingredients','Goods Purchased for Resale','Service Consumables / Travel'];
+const INC=['Product Sales','Product Sales','Contract / Running Bill Receipts','Food & Room Sales','Product Sales','Service Fees'];
+const KW=[[/udhaa?r\s*(recd|received|wapas|collected)|baki\s*jama|collected/i,'Udhaar Collected'],[/creditor|udhaa?r\s*chuk|paid\s*to\s*supplier/i,'Creditors Paid'],
+[/interest|emi|byaj|ब्याज/i,'Loan Interest / EMI'],[/loan\s*(repaid|return|chuk)/i,'Loan Repaid'],[/loan\s*(recd|received|liya|taken)|^loan\b/i,'Loan Received'],
+[/capital|poonji|पूंजी/i,'Capital Introduced'],[/drawing|personal|ghar|घर/i,'Drawings (Owner)'],[/machine|furniture|computer|vehicle|laptop|asset|मशीन/i,'Fixed Asset Purchase'],
+[/rent|kiraya|किराया|ਕਿਰਾਇਆ/i,'Rent (Kiraya)'],[/bijli|electric|बिजली|ਬਿਜਲੀ/i,'Electricity (Bijli)'],[/salary|tankh?wa|तनख्वाह|वेतन|ਤਨਖਾਹ/i,'Salaries (Fixed Staff)'],
+[/majdoori|mazdoori|labou?r|मजदूरी|ਮਜ਼ਦੂਰੀ/i,'Direct / Job-site Labour'],[/thekedar|sub.?contract/i,'Sub-contractor Charges'],[/freight|bhada|bhara|भाड़ा|ਭਾੜਾ/i,'Freight / Bhada'],
+[/packing|packaging|pack/i,'Packaging'],[/commission|delivery|courier/i,'Delivery & Commission'],[/diesel|fuel|petrol/i,'Fuel & Power (Production)'],
+[/insurance|bima|बीमा/i,'Insurance'],[/repair|marammat|मरम्मत/i,'Repairs & Maintenance'],[/phone|internet|recharge|wifi/i,'Telephone & Internet'],
+[/advert|marketing|pamphlet|flex/i,'Advertising'],[/licen[cs]e|ca fee|audit|professional/i,'Licences & Professional Fees'],
+[/purchase|kharida|kharid|खरीद|ਖਰੀਦ|maal/i,'$PUR'],[/sale|bikri|बिक्री|ਵਿਕਰੀ|cash\s*recd|received|recd|jama|जमा|income|bill/i,'$INC'],[/kharch|expense|misc|खर्च|ਖਰਚ/i,'Misc Expenses']];
+const $=id=>document.getElementById(id),E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+function def(){const mat={};for(const k in C)mat[k]=C[k][1].split('');return{biz:0,cur:'₹',profile:{name:'',owner:'',phone:'',email:'',gstin:'',pan:'',address:''},ob:{cash:0,bank:0,stock:0,recv:0,pay:0,loan:0,fa:0,cstock:''},rows:[],over:{},price:0,vc:0,goal:0,mat}}
+function load(){try{const j=JSON.parse(localStorage.getItem('bk_v1'));if(j&&j.rows)return Object.assign(def(),j)}catch(e){}return def()}
+function save(){try{localStorage.setItem('bk_v1',JSON.stringify(S))}catch(e){}}
+let S=load(),P=[],F={},tab=0;
+const M=n=>(n<0?'-':'')+S.cur+Math.abs(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pc=n=>(isFinite(n)?n.toFixed(1):'0.0')+'%';
+const isCost=c=>C[c]&&(C[c][0]==='Purchase'||C[c][0]==='Expense');
+const apl=()=>Object.keys(C).filter(c=>S.mat[c]&&S.mat[c][S.biz]!=='.');
+// Behaviour = INTERSECT(category row, business column), unless overridden
+function cb(c){const v=S.over[c]||(S.mat[c]?S.mat[c][S.biz]:'F');return v==='V'?'V':'F'}
+const eb=r=>r.beh||cb(r.cat);
+// ---------- parsing ----------
+function guess(d){for(const[r,c]of KW)if(r.test(d)){let k=c==='$PUR'?PUR[S.biz]:c==='$INC'?INC[S.biz]:c;
+ if(S.mat[k][S.biz]==='.')k=k==='Direct / Job-site Labour'?'Salaries (Fixed Staff)':'Misc Expenses';return k}return'Misc Expenses'}
+function mk(desc,amt,date,page,gst,incl,cat){cat=cat||guess(desc);const t=C[cat][0];let mode='Cash';
+ if(/upi|gpay|phonepe|paytm|bank|neft|rtgs|imps|cheque|chq|online/i.test(desc))mode='Bank/UPI';
+ else if(['Sale','Purchase','Expense','Asset'].includes(t)&&/udhaa?r|credit|baki|उधार|ਉਧਾਰ/i.test(desc))mode='Credit/Udhaar';
+ return{id:uid(),date,page:String(page),desc,cat,beh:'',mode,amt,gst,incl}}
+function pdate(m){let d=+m[1],mo=+m[2],y=+m[3];if(y<100)y+=2000;if(mo>12)[d,mo]=[mo,d];return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0')}
+function parse(text,page){let cd=new Date().toISOString().slice(0,10),out=[];
+ for(let line of text.split(/\n/)){line=line.trim();const chk=/^⚠/.test(line);line=line.replace(/^⚠\s*/,'').replace(/^\d+[.)]\s+/,'');if(!line||/^(total|grand|balance|b\/f|c\/f|brought|carried)/i.test(line))continue;
+  const dm=line.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);if(dm){cd=pdate(dm);line=line.replace(dm[0],' ')}
+  let gst=0;const gm=line.match(/gst\s*@?\s*(5|12|18|28)\b|\b(5|12|18|28)\s*%/i);if(gm){gst=+(gm[1]||gm[2]);line=line.replace(gm[0],' ')}
+  const incl=/incl/i.test(line),nums=[...line.matchAll(/\d[\d,]*(?:\.\d+)?/g)];if(!nums.length)continue;
+  const last=nums[nums.length-1],amt=parseFloat(last[0].replace(/,/g,''));if(!(amt>0))continue;
+  const desc=line.slice(0,last.index)+' '+line.slice(last.index+last[0].length);
+  {const r0=mk(desc.replace(/₹|\brs\.?(?=\s|\d)/ig,'').replace(/\s+/g,' ').trim(),amt,cd,page,gst,incl);r0.chk=chk;out.push(r0)}}
+ return out}
+// ---------- calculations ----------
+function calc(){const o={sales:0,og:0,itc:0,purch:0,cash:+S.ob.cash,bank:+S.ob.bank,recv:+S.ob.recv,pay:+S.ob.pay,loan:+S.ob.loan,fa:+S.ob.fa,draw:0,capin:0,cat:{},F:0,V:0,opex:0};
+ for(const r of S.rows){const t=C[r.cat]?C[r.cat][0]:'Expense',rate=(+r.gst||0)/100;let B,T;
+  if(r.incl){T=+r.amt;B=T/(1+rate)}else{B=+r.amt;T=B*(1+rate)}const g=T-B;
+  let m=r.mode;if(m==='Credit/Udhaar'&&!['Sale','Purchase','Expense','Asset'].includes(t))m='Cash';
+  const inflow=['Sale','Capital','Loan','Collect'].includes(t);
+  if(m==='Cash')o.cash+=inflow?T:-T;else if(m==='Bank/UPI')o.bank+=inflow?T:-T;else if(t==='Sale')o.recv+=T;else o.pay+=T;
+  if(t==='Sale'){o.sales+=B;o.og+=g}
+  else if(t==='Purchase'||t==='Expense'){o.itc+=g;if(t==='Purchase')o.purch+=B;else o.opex+=B;const b=eb(r);o[b]+=B;(o.cat[r.cat]=o.cat[r.cat]||{t,amt:0}).amt+=B}
+  else if(t==='Asset'){o.fa+=B;o.itc+=g}
+  else if(t==='Drawings')o.draw+=T;else if(t==='Capital')o.capin+=T;else if(t==='Loan')o.loan+=T;else if(t==='LoanRepay')o.loan-=T;
+  else if(t==='Collect')o.recv-=T;else if(t==='PayCr')o.pay-=T}
+ const ob=S.ob;o.cstock=ob.cstock===''?+ob.stock:+ob.cstock;o.adj=(+ob.stock)-o.cstock;o.V+=o.adj;
+ o.cogs=o.purch+o.adj;o.gp=o.sales-o.cogs;o.np=o.gp-o.opex;o.net=o.og-o.itc;
+ o.assets=o.cash+o.bank+o.recv+o.cstock+o.fa+Math.max(0,-o.net);o.liab=o.pay+o.loan+Math.max(0,o.net);
+ o.ocap=(+ob.cash)+(+ob.bank)+(+ob.stock)+(+ob.recv)+(+ob.fa)-(+ob.pay)-(+ob.loan);o.eq=o.ocap+o.np-o.draw+o.capin;return o}
+function cvp(o){const cm=o.sales-o.V,cmr=o.sales>0?cm/o.sales:0,bep=cmr>0?o.F/cmr:0,mos=o.sales-bep,mosp=o.sales>0?mos/o.sales*100:0,g=+S.goal||0,req=cmr>0?(o.F+g)/cmr:0;let bu=0,ru=0;const p=+S.price;
+ if(p>0){const cu=S.vc>0?p-S.vc:p*cmr;if(cu>0){bu=o.F/cu;ru=(o.F+g)/cu}}return{cm,cmr,bep,mos,mosp,req,bu,ru}}
+// ---------- rendering ----------
+const tr=(a,b,c='')=>`<tr class="${c}"><td>${a}</td><td class="n">${b}</td></tr>`;
+const catOpts=(sel,all)=>(all?'<option value="">All categories</option>':'')+Object.keys(C).filter(c=>c===sel||all||S.mat[c][S.biz]!=='.').map(c=>`<option ${c===sel?'selected':''}>${E(c)}</option>`).join('');
+function renderLedger(){const a=F;const rows=S.rows.filter(r=>(!a.from||r.date>=a.from)&&(!a.to||r.date<=a.to)&&(!a.pg||r.page===a.pg)&&(!a.mode||r.mode===a.mode)&&(!a.cat||r.cat===a.cat)&&(!a.q||(r.desc+r.cat).toLowerCase().includes(a.q.toLowerCase()))).sort((x,y)=>x.date<y.date?-1:1);
+ const ds=(id,f,v,l)=>`<select data-r="${id}" data-f="${f}">${l.map(([k,t])=>`<option value="${k}" ${String(k)===String(v)?'selected':''}>${t}</option>`).join('')}</select>`;
+ $('lt').innerHTML=rows.map(r=>{const b=eb(r),k=isCost(r.cat);return`<tr${r.chk?' style="background:#fef9c3" title="Low-confidence reading: please verify"':''}><td><input type="date" value="${r.date}" data-r="${r.id}" data-f="date"></td><td><input class="sm" value="${E(r.page)}" data-r="${r.id}" data-f="page"></td><td><input value="${E(r.desc)}" data-r="${r.id}" data-f="desc"></td><td><select data-r="${r.id}" data-f="cat">${catOpts(r.cat)}</select></td><td>${k?`<button class="bd ${b}" data-tg="${r.id}" title="Click to switch">${b==='F'?'Fixed':'Variable'}</button>`:'–'}</td><td>${ds(r.id,'mode',r.mode,[['Cash','Cash'],['Bank/UPI','Bank/UPI'],['Credit/Udhaar','Credit/Udhaar']])}</td><td><input type="number" step="any" class="am" value="${r.amt}" data-r="${r.id}" data-f="amt"></td><td>${ds(r.id,'gst',r.gst,[[0,'None'],[5,'5%'],[12,'12%'],[18,'18%'],[28,'28%']])}</td><td><input type="checkbox" ${r.incl?'checked':''} data-r="${r.id}" data-f="incl"></td><td><button class="r" data-del="${r.id}">✕</button></td></tr>`}).join('')||'<tr><td colspan="10">No entries yet. Scan a page, upload a .txt file, type a quick entry, or load the sample ledger.</td></tr>';
+ $('lsum').textContent=rows.length+' of '+S.rows.length+' entries shown. Click a Fixed/Variable badge to override that row.'+(S.rows.some(r=>r.chk)?' Yellow rows were read with low confidence: please verify them.':'')}
+function renderPL(o){const L=Object.entries(o.cat);const exp=L.filter(([k,v])=>v.t==='Expense');
+ $('pl').innerHTML=tr('Gross Sales (net of GST)',M(o.sales),'')+tr('Opening Stock',M(+S.ob.stock))+tr('Add: Purchases / Direct Costs',M(o.purch))+tr('Less: Closing Stock',M(-o.cstock))+tr('Direct Costs / COGS',M(o.cogs),'t')+
+ tr('Gross Profit',M(o.gp),'t')+tr('Gross Margin %',pc(o.sales?o.gp/o.sales*100:0))+exp.map(([k,v])=>tr('&nbsp;&nbsp;'+E(k)+` (${cb(k)==='V'?'Variable':'Fixed'})`,M(v.amt))).join('')+tr('Total Operating Expenses',M(o.opex),'t')+tr('Net Profit / (Loss)',`<span class="${o.np>=0?'pos':'neg'}">${M(o.np)}</span>`,'t');
+ $('gst').innerHTML=[['Output GST Collected',o.og],['Input Tax Credit (ITC)',o.itc],[o.net>=0?'Net GST Payable':'Net GST Refundable',Math.abs(o.net)]].map(([a,b])=>`<div><div class="lbl">${a}</div><div class="kpi">${M(b)}</div></div>`).join('')}
+function renderBS(o){const d=o.assets-(o.liab+o.eq),ok=Math.abs(d)<0.01;
+ $('bsb').innerHTML=`<div class="warn" style="background:${ok?'#dcfce7':'#fee2e2'};border-color:${ok?'#15803d':'#b91c1c'}"><b>${ok?'✔ Balanced':'✖ Difference '+M(d)}</b>${ok?'':' – Assets minus (Liabilities + Equity). Check entries with unusual modes or GST.'}</div>`;
+ $('bs').innerHTML=`<table>${tr('<b>ASSETS</b>','')}${tr('Closing Cash in Hand',M(o.cash))}${tr('Closing Bank / UPI',M(o.bank))}${tr('Accounts Receivable (Udhaar)',M(o.recv))}${tr('Inventory (Closing Stock)',M(o.cstock))}${tr('Fixed Assets',M(o.fa))}${o.net<0?tr('GST Refundable',M(-o.net)):''}${tr('Total Assets',M(o.assets),'t')}</table>
+ <table>${tr('<b>LIABILITIES &amp; EQUITY</b>','')}${tr('Accounts Payable',M(o.pay))}${tr('Loans',M(o.loan))}${o.net>0?tr('Net GST Payable',M(o.net)):''}${tr('Total Liabilities',M(o.liab),'t')}${tr('Opening Capital',M(o.ocap))}${tr('+ Capital Introduced',M(o.capin))}${tr('+ Net Profit',M(o.np))}${tr('− Drawings',M(-o.draw))}${tr("Owner's Equity",M(o.eq),'t')}${tr('Total Liabilities + Equity',M(o.liab+o.eq),'t')}</table>`}
+function renderFV(o){const f=[],v=[];for(const[k,x]of Object.entries(o.cat)){const row=`<div class="sw"><span>${E(k)}<br><b>${M(x.amt)}</b></span><label><input type="checkbox" data-sw="${E(k)}" ${cb(k)==='V'?'checked':''}> Variable</label></div>`;(cb(k)==='V'?v:f).push(row)}
+ if(o.adj)v.push(`<div class="sw"><span>Stock adjustment (opening − closing)<br><b>${M(o.adj)}</b></span></div>`);
+ $('fl').innerHTML=f.join('')||'<p class="lbl">None</p>';$('vl').innerHTML=v.join('')||'<p class="lbl">None</p>';$('ft').textContent=M(o.F);$('vt').textContent=M(o.V);
+ const ks=Object.keys(C).filter(isCost);$('mx').innerHTML='<tr><th>Category</th>'+SHORT.map((s,i)=>`<th class="${i===S.biz?'cur':''}">${s}</th>`).join('')+'</tr>'+ks.map(k=>`<tr><td>${E(k)}</td>${S.mat[k].map((c,i)=>`<td data-mx="${E(k)}|${i}" class="${i===S.biz?'cur':''}">${c==='.'?'·':c}</td>`).join('')}</tr>`).join('')}
+let ch;
+function cvpKpi(o,c){const ok=o.sales>0&&c.cmr>0;const risk=!ok?['n/a','']:c.mosp<10?['Low buffer – risky','neg']:c.mosp<25?['Moderate buffer','']:['Healthy buffer','pos'];
+ const k=(a,b,x='')=>`<div><div class="lbl">${a}</div><div class="kpi ${x}">${b}</div></div>`;
+ return k('Total Sales',M(o.sales))+k('Fixed Costs',M(o.F))+k('Variable Costs',M(o.V))+k('Total Contribution',M(c.cm))+k('Contribution Margin Ratio',pc(c.cmr*100))+k('Break-Even Sales',ok?M(c.bep):'n/a')+k('BEP Units',c.bu?c.bu.toFixed(0):'enter unit price')+
+  k('Margin of Safety (₹)',ok?M(c.mos):'n/a',c.mos<0?'neg':'')+k('Margin of Safety %',ok?pc(c.mosp):'n/a',risk[1])+k('Risk Indicator',risk[0],risk[1])+k('Required Sales for Desired Profit',ok?M(c.req):'n/a')+k('Required Units',c.ru?c.ru.toFixed(0):'enter unit price')}
+function cds(o,c,ok){const mx=(Math.max(o.sales,c.bep||0)*1.4)||100000,xs=Array.from({length:11},(_,i)=>mx*i/10);
+ const ds=[{label:'Total Revenue',data:xs.map(x=>({x,y:x})),borderColor:'#15803d'},{label:'Total Cost',data:xs.map(x=>({x,y:o.F+(1-c.cmr)*x})),borderColor:'#b91c1c'},{label:'Fixed Cost',data:xs.map(x=>({x,y:o.F})),borderColor:'#6b7280',borderDash:[6,4]}];
+ ds.forEach(d=>{d.showLine=true;d.pointRadius=0;d.borderWidth=2});if(ok)ds.push({label:'Break-Even Point',data:[{x:c.bep,y:c.bep}],showLine:false,pointRadius:8,backgroundColor:'#f59e0b',borderColor:'#000'});return ds}
+const chOpt=()=>({maintainAspectRatio:false,scales:{x:{title:{display:true,text:'Sales volume'}},y:{title:{display:true,text:'Revenue / Cost'}}}});
+function renderCVP(o){const c=cvp(o),ok=o.sales>0&&c.cmr>0;$('cv2').innerHTML=cvpKpi(o,c);const n=$('chartnote');
+ if(typeof Chart==='undefined'){n.hidden=false;n.textContent='Chart.js could not be loaded (you are offline and it is not cached yet). All figures above still work. Open once with internet to enable charts.';return}
+ n.hidden=true;if(ch)ch.destroy();ch=new Chart($('chart'),{type:'scatter',data:{datasets:cds(o,c,ok)},options:chOpt()})}
+// ---------- business profile & PDF report ----------
+const GRE=/^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/,fd=d=>d?d.split('-').reverse().join('/'):'';
+function gv(){const g=S.profile.gstin,m=$('gmsg');m.className='lbl';m.textContent=!g?'':GRE.test(g)?'✔ GSTIN format looks valid':'⚠ GSTIN should be 15 characters, e.g. 03ABCDE1234F1Z5'}
+function profUI(){S.profile=Object.assign(def().profile,S.profile);document.querySelectorAll('[data-pf]').forEach(e=>e.value=S.profile[e.dataset.pf]||'');gv()}
+function rh(){const p=S.profile,ds=S.rows.map(r=>r.date).sort(),L=[p.phone&&'Ph: '+E(p.phone),p.email&&'Email: '+E(p.email)].filter(Boolean).join(' · '),G=[p.gstin&&'GSTIN: <b>'+E(p.gstin)+'</b>',p.pan&&'PAN: <b>'+E(p.pan)+'</b>'].filter(Boolean).join(' · ');
+ return `<div class="rh-in"><h1>${E(p.name||'Your Business Name')}</h1><div>${E(BIZ[S.biz])}${p.owner?' · Owner: '+E(p.owner):''}</div>${p.address?'<div>'+E(p.address).replace(/\n/g,'<br>')+'</div>':''}${L?'<div>'+L+'</div>':''}${G?'<div>'+G+'</div>':''}<div class="lbl">Period: ${ds.length?fd(ds[0])+' to '+fd(ds[ds.length-1]):'–'} · Generated: ${new Date().toLocaleDateString('en-IN')}</div></div>`}
+function fvTbl(o){const f=[],v=[];for(const[k,x]of Object.entries(o.cat))(cb(k)==='V'?v:f).push([k,x.amt]);const t=a=>a.map(([k,x])=>tr(E(k),M(x))).join('');
+ return `<div class="two"><table>${tr('<b>Fixed Costs</b>','')}${t(f)}${tr('Total Fixed',M(o.F),'t')}</table><table>${tr('<b>Variable Costs</b>','')}${t(v)}${o.adj?tr('Stock adjustment',M(o.adj)):''}${tr('Total Variable',M(o.V),'t')}</table></div>`}
+function ledTbl(){const rows=[...S.rows].sort((a,b)=>a.date<b.date?-1:1);return `<table><tr><th>Date</th><th>Pg</th><th>Description</th><th>Category</th><th>Mode</th><th class="n">Amount</th><th>GST</th></tr>${rows.map(r=>`<tr><td>${fd(r.date)}</td><td>${E(r.page)}</td><td>${E(r.desc)}</td><td>${E(r.cat)}</td><td>${r.mode}</td><td class="n">${M(r.amt)}</td><td>${r.gst?r.gst+'%'+(r.incl?' incl':''):'–'}</td></tr>`).join('')}</table>`}
+function chartImg(o,c){if(typeof Chart==='undefined'||!(o.sales>0&&c.cmr>0))return'';try{const cv=document.createElement('canvas');cv.width=900;cv.height=420;const w=document.createElement('div');w.style.cssText='position:fixed;left:-9999px;top:0;width:900px;height:420px';w.appendChild(cv);document.body.appendChild(w);
+ const x=new Chart(cv,{type:'scatter',data:{datasets:cds(o,c,true)},options:{...chOpt(),responsive:false,animation:false}}),u=x.toBase64Image();x.destroy();w.remove();return `<img src="${u}" style="width:100%;max-width:720px" alt="Break-even chart">`}catch(e){return''}}
+function exportPDF(){const o=calc(),c=cvp(o);renderPL(o);renderBS(o);const pl=$('pl').innerHTML,bs=$('bs').innerHTML,gs=$('gst').innerHTML;
+ $('pv').innerHTML=rh()+`<h2>Income Statement (Profit &amp; Loss)</h2><table>${pl}</table><h2>GST Summary</h2><div class="grid">${gs}</div>
+ <div class="pb">${rh()}<h2>Balance Sheet</h2>${$('bsb').innerHTML}<div class="two">${bs}</div></div>
+ <div class="pb">${rh()}<h2>Fixed vs Variable Costs</h2>${fvTbl(o)}<h2>CVP, Break-Even &amp; Target Profit</h2><div class="grid">${cvpKpi(o,c)}</div>${chartImg(o,c)}</div>
+ <div class="pb">${rh()}<h2>Ledger (${S.rows.length} entries)</h2>${ledTbl()}<div class="sign"><div>Prepared by</div><div>Authorised signatory</div></div></div>`;
+ const t=document.title;document.title=(S.profile.name||'Business')+' - Financial Report';document.body.classList.add('pv');
+ const done=()=>{document.body.classList.remove('pv');document.title=t;removeEventListener('afterprint',done)};addEventListener('afterprint',done);setTimeout(()=>print(),80)}
+$('bPdf').onclick=exportPDF;
+function renderAll(){const o=calc();document.querySelectorAll('.rh').forEach(e=>e.innerHTML=rh());renderLedger();renderPL(o);renderBS(o);renderFV(o);if(tab===5)renderCVP(o);$('ocap').textContent=M(o.ocap);
+ $('qc').innerHTML='<option value="">Auto category</option>'+catOpts('',false);$('f_cat').innerHTML=catOpts(F.cat||'',true)}
+function renderPages(){$('pages').innerHTML=P.map((p,i)=>`<div class="card"><b>${E(p.name)}</b> <span class="badge">${p.src==='local'?'Local reader':p.src==='rewind'?'Text / Rewind AI':'Manual'}</span> Page <input class="sm" value="${E(p.page)}" data-pg="${i}" style="width:55px">${p.file?` <button class="g" data-rot="${i}">⟳ Rotate &amp; re-read</button> <button class="g" data-rs="${i}">Re-read</button>`:''}<div class="pg">${p.url?`<img src="${p.url}" alt="scan" onclick="this.classList.toggle('zm')">`:''}<textarea data-tx="${i}" placeholder="Paste or edit ledger lines here (e.g. 01/10/2026 Sale 45000 GST 18)">${E(p.text)}</textarea></div>${(p.info||[]).map(x=>`<div class="lbl">${E(x)}</div>`).join('')}${p.proc?`<details><summary class="lbl">What the reader sees (cleaned page, red boxes = detected lines)</summary><img src="${p.proc}" style="max-width:100%"></details>`:''}<p class="lbl">Lines starting with ⚠ are doubtful and will be highlighted in the ledger.</p><button data-add="${i}">Add these lines to ledger</button> <button class="g" data-rm="${i}">Discard</button></div>`).join('')}
+// ---------- LOCAL HANDWRITING ENGINE (runs only in this browser) ----------
+const HW={
+ gray(a){const n=a.length>>2,g=new Uint8Array(n);for(let i=0,j=0;i<n;i++,j+=4)g[i]=((.299*a[j]+.587*a[j+1]+.114*a[j+2])+.5)|0;return g},
+ stretch(g){const hs=new Uint32Array(256),n=g.length;for(let i=0;i<n;i++)hs[g[i]]++;let c=0,lo=0,hi=255;for(let v=0;v<256;v++){c+=hs[v];if(c>n*.005){lo=v;break}}c=0;for(let v=255;v>=0;v--){c+=hs[v];if(c>n*.005){hi=v;break}}
+  if(hi-lo<30)return g;const k=255/(hi-lo);for(let i=0;i<n;i++){const v=(g[i]-lo)*k;g[i]=v<0?0:v>255?255:v}return g},
+ // local adaptive threshold (Sauvola): copes with shadows and uneven paper. 1 = ink
+ sauvola(g,w,h,win,k){const W=w+1,I=new Float64Array(W*(h+1)),Q=new Float64Array(W*(h+1));
+  for(let y=0;y<h;y++){let rs=0,rq=0;for(let x=0;x<w;x++){const v=g[y*w+x];rs+=v;rq+=v*v;const i=(y+1)*W+x+1;I[i]=I[i-W]+rs;Q[i]=Q[i-W]+rq}}
+  const r=win>>1,out=new Uint8Array(w*h);
+  for(let y=0;y<h;y++){const y0=Math.max(0,y-r),y1=Math.min(h,y+r+1);for(let x=0;x<w;x++){const x0=Math.max(0,x-r),x1=Math.min(w,x+r+1),n=(x1-x0)*(y1-y0),
+   s=I[y1*W+x1]-I[y0*W+x1]-I[y1*W+x0]+I[y0*W+x0],q=Q[y1*W+x1]-Q[y0*W+x1]-Q[y1*W+x0]+Q[y0*W+x0],m=s/n,sd=Math.sqrt(Math.max(0,q/n-m*m));
+   out[y*w+x]=g[y*w+x]<m*(1+k*(sd/128-1))?1:0}}return out},
+ dilate(b,w,h){const o=b.slice();for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x;if(!b[i]&&(b[i-1]||b[i+1]||b[i-w]||b[i+w]))o[i]=1}return o},
+ // erase long thin horizontal / vertical ruled lines but keep handwriting that crosses them
+ rules(b,w,h){const n=w*h,up=new Uint16Array(n),dn=new Uint16Array(n),lf=new Uint16Array(n),rt=new Uint16Array(n);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;if(b[i]){up[i]=(y?up[i-w]:0)+1;lf[i]=(x?lf[i-1]:0)+1}}
+  for(let y=h-1;y>=0;y--)for(let x=w-1;x>=0;x--){const i=y*w+x;if(b[i]){dn[i]=(y<h-1?dn[i+w]:0)+1;rt[i]=(x<w-1?rt[i+1]:0)+1}}
+  const o=b.slice(),minL=Math.max(60,w*.12),minV=Math.max(60,h*.08),T=5;
+  for(let i=0;i<n;i++){if(!b[i])continue;const hl=lf[i]+rt[i]-1,vl=up[i]+dn[i]-1;if((hl>=minL&&vl<=T)||(vl>=minV&&hl<=T))o[i]=0}return o},
+ // text-line tilt in degrees (positive = text descends to the right)
+ skew(b,w,h){const all=[];for(let i=0;i<b.length;i++)if(b[i])all.push(i);const st=Math.max(1,Math.floor(all.length/40000)),px=[],py=[];
+  for(let k=0;k<all.length;k+=st){px.push(all[k]%w);py.push((all[k]/w)|0)}let best=0,bs=-1;const bins=new Float64Array(h+2*w+8);
+  for(let a=-5;a<=5.001;a+=.25){const t=Math.tan(a*Math.PI/180);bins.fill(0);for(let k=0;k<px.length;k++)bins[((py[k]-px[k]*t+w)|0)]++;let s=0;for(let q=0;q<bins.length;q++)s+=bins[q]*bins[q];if(s>bs){bs=s;best=a}}return best},
+ // horizontal projection profile -> text line bands
+ lines(b,w,h){const rows=new Float32Array(h);for(let y=0;y<h;y++){let c=0;for(let x=0;x<w;x++)c+=b[y*w+x];rows[y]=c}
+  const r=Math.max(1,Math.round(h/400)),sm=new Float32Array(h);let mx=0;for(let y=0;y<h;y++){let s=0,n=0;for(let k=-r;k<=r;k++){const yy=y+k;if(yy>=0&&yy<h){s+=rows[yy];n++}}sm[y]=s/n;if(sm[y]>mx)mx=sm[y]}
+  const th=Math.max(2,mx*.04);let bands=[],s=-1;for(let y=0;y<h;y++){if(sm[y]>th){if(s<0)s=y}else if(s>=0){bands.push([s,y]);s=-1}}if(s>=0)bands.push([s,h]);
+  bands=bands.filter(q=>q[1]-q[0]>=8);if(!bands.length)return[];const hs=bands.map(q=>q[1]-q[0]).sort((a,b)=>a-b),med=hs[hs.length>>1];
+  const m=[];for(const q of bands){const p=m[m.length-1];if(p&&q[0]-p[1]<.35*med&&q[1]-p[0]<1.8*med)p[1]=q[1];else m.push([q[0],q[1]])}
+  const out=[];for(const q of m){const hh=q[1]-q[0];if(hh>2.3*med){const n=Math.round(hh/(1.15*med));let st=q[0];for(let k=1;k<n;k++){const ex=q[0]+hh*k/n;let by=Math.round(ex),bv=1e9;for(let y=Math.round(ex-.3*med);y<=Math.round(ex+.3*med);y++)if(y>q[0]&&y<q[1]&&sm[y]<bv){bv=sm[y];by=y}out.push([st,by]);st=by}out.push([st,q[1]])}else out.push(q)}
+  const pad=Math.round(.2*med);return out.map(q=>({y0:Math.max(0,q[0]-pad),y1:Math.min(h,q[1]+pad)}))},
+ // vertical projection inside a line -> description block and (if present) the amount column at the right
+ split(b,w,y0,y1){const cols=new Uint16Array(w);for(let y=y0;y<y1;y++)for(let x=0;x<w;x++)cols[x]+=b[y*w+x];const gm=Math.max(12,Math.round((y1-y0)*.9)),T=Math.max(3,Math.round((y1-y0)*.1)),segs=[];let s=-1,gap=0,last=0;
+  for(let x=0;x<w;x++){if(cols[x]>=T){if(s<0)s=x;gap=0;last=x}else if(s>=0){gap++;if(gap>=gm){segs.push([s,last+1]);s=-1;gap=0}}}if(s>=0)segs.push([s,last+1]);if(!segs.length)return null;
+  const L=segs[segs.length-1],first=segs[0];if(segs.length>=2&&L[0]>w*.45&&(L[1]-L[0])<.3*w)return{t:[first[0],segs[segs.length-2][1]],a:L};return{t:[first[0],L[1]],a:null}},
+ nums(t){return t.match(/\d[\d,]*(?:\.\d+)?/g)||[]},val(s){return parseFloat(s.replace(/,/g,''))}
+};
+function readBytes(blob){return new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(new Uint8Array(r.result));r.onerror=()=>no(new Error('could not read the file'));r.readAsArrayBuffer(blob)})}
+function readText(file){if(file.text)return file.text();return new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result||''));r.onerror=()=>no(new Error('could not read the text file'));r.readAsText(file)})}
+async function sniff(f){const b=await readBytes(f.slice(0,16));if(!b.length)return'empty';const s=String.fromCharCode(...b.slice(0,12));
+ if(b[0]===0xFF&&b[1]===0xD8)return'jpeg';if(b[0]===0x89&&s.slice(1,4)==='PNG')return'png';if(s.startsWith('GIF8'))return'gif';if(s.startsWith('RIFF')&&s.slice(8,12)==='WEBP')return'webp';
+ if(s.startsWith('BM'))return'bmp';if(s.startsWith('%PDF'))return'pdf';if(s.slice(4,8)==='ftyp')return s.slice(8,12)==='avif'?'avif':'heic';return'unknown'}
+const imgFrom=u=>new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>no(new Error('decode failed'));i.src=u});
+async function heicToJpeg(f){if(!window.heic2any&&!(await loadScript('https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js')))throw new Error('this is an iPhone HEIC photo. Connect to the internet once so it can be converted, or set the phone camera to "Most Compatible" (JPEG)');
+ const r=await heic2any({blob:f,toType:'image/jpeg',quality:.9});return Array.isArray(r)?r[0]:r}
+// tries several decoders and reports the real reason when all fail
+async function loadImg(f){const kind=await sniff(f);
+ if(kind==='empty')throw new Error('the file is empty (0 bytes), probably an interrupted download or copy');
+ if(kind==='pdf')throw new Error('this is a PDF, not an image. Export or screenshot the page as PNG/JPEG');
+ let blob=f;if(kind==='heic')blob=await heicToJpeg(f);
+ const MT={jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',bmp:'image/bmp',avif:'image/avif'};const mt=kind==='heic'?'image/jpeg':MT[kind];if(mt&&blob.type!==mt)blob=new Blob([blob],{type:mt});
+ const tries=[];
+ if(window.createImageBitmap){tries.push(async()=>{try{return await createImageBitmap(blob,{imageOrientation:'from-image'})}catch(e){return await createImageBitmap(blob)}});
+  tries.push(()=>createImageBitmap(blob,{resizeWidth:2600,resizeQuality:'high'}))}
+ tries.push(()=>imgFrom(URL.createObjectURL(blob)));
+ tries.push(async()=>imgFrom(await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>no(new Error('read failed'));r.readAsDataURL(blob)})));
+ for(const t of tries){try{const im=await t();if(im&&im.width>0&&im.height>0)return im}catch(e){}}
+ throw new Error(kind==='unknown'?'the file content is not a recognised image (it may be damaged or not a photo)':'this '+kind.toUpperCase()+' could not be decoded by your browser. It may be truncated/damaged or extremely large. Open it in Photos or Paint and Save As a new JPEG or PNG')}
+function rotCanvas(img,rot,maxW,up){const sw=rot%180?img.height:img.width,sh=rot%180?img.width:img.height,s=Math.min(up||1,maxW/sw),cv=document.createElement('canvas');cv.width=Math.round(sw*s);cv.height=Math.round(sh*s);
+ const x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,cv.width,cv.height);x.translate(cv.width/2,cv.height/2);x.rotate(rot*Math.PI/180);const dw=img.width*s,dh=img.height*s;x.drawImage(img,-dw/2,-dh/2,dw,dh);return cv}
+function crop(b,w,x0,x1,y0,y1){const cw=Math.max(1,x1-x0),ch=Math.max(1,y1-y0),c=document.createElement('canvas');c.width=cw;c.height=ch;const x=c.getContext('2d'),d=x.createImageData(cw,ch);
+ for(let y=0;y<ch;y++)for(let xx=0;xx<cw;xx++){const v=b[(y0+y)*w+x0+xx]?0:255,i=(y*cw+xx)*4;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255}x.putImageData(d,0,0);
+ const s=Math.min(3,Math.max(.5,64/ch)),pad=16,o=document.createElement('canvas');o.width=Math.round(cw*s)+2*pad;o.height=Math.round(ch*s)+2*pad;const ox=o.getContext('2d');ox.fillStyle='#fff';ox.fillRect(0,0,o.width,o.height);ox.imageSmoothingQuality='high';ox.drawImage(c,pad,pad,cw*s,ch*s);return o}
+function procPreview(b,w,h,L){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d'),d=x.createImageData(w,h);for(let i=0;i<b.length;i++){const v=b[i]?0:255;d.data[i*4]=d.data[i*4+1]=d.data[i*4+2]=v;d.data[i*4+3]=255}x.putImageData(d,0,0);
+ x.strokeStyle='#e11';x.lineWidth=2;L.forEach(l=>x.strokeRect(2,l.y0,w-4,l.y1-l.y0));const o=document.createElement('canvas');o.width=Math.min(900,w);o.height=Math.round(h*o.width/w);o.getContext('2d').drawImage(c,0,0,o.width,o.height);return o.toDataURL('image/jpeg',.7)}
+const ocr=async(w,cv)=>{const r=await w.recognize(cv);return{t:(r.data.text||'').replace(/\s+/g,' ').trim(),c:r.data.confidence||0}};
+const strip=(t,tok)=>{const k=t.lastIndexOf(tok);return(k>=0?t.slice(0,k):t).replace(/[\s₹:=.\-]*(?:rs\.?)?\s*$/i,'').trim()};
+// Starts a Tesseract worker. Some sandboxes (e.g. the Claude preview frame) refuse blob: workers, so several launch methods are tried.
+const TV='5.1.1',WP='https://cdn.jsdelivr.net/npm/tesseract.js@'+TV+'/dist/worker.min.js',WSTRAT=[{},{workerBlobURL:false,workerPath:'data:application/javascript;base64,'+btoa('importScripts("'+WP+'");')},{workerBlobURL:false,workerPath:'data:text/javascript;charset=utf-8,'+encodeURIComponent('importScripts("'+WP+'");')}];
+let wsOK=-1;
+async function makeWorker(lang,params){let err;const order=wsOK>=0?[wsOK]:[0,1,2];
+ for(const k of order){let w=null;try{w=await Tesseract.createWorker(lang,1,WSTRAT[k]);await w.setParameters(params);wsOK=k;return w}catch(e){err=e;try{if(w)await w.terminate()}catch(x){}}}
+ throw err}
+async function hwRead(img,rot,ctx){const prog=t=>$('ocrmsg').textContent=t;
+ let cv=rotCanvas(img,rot,1800,2),w=cv.width,h=cv.height,g=HW.stretch(HW.gray(cv.getContext('2d').getImageData(0,0,w,h).data));const win=Math.round(w/30)|1;
+ prog('Straightening the page…');const ang=HW.skew(HW.sauvola(g,w,h,win,.2),w,h);
+ if(Math.abs(ang)>.3){const c2=document.createElement('canvas');c2.width=w;c2.height=h;const x=c2.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.translate(w/2,h/2);x.rotate(-ang*Math.PI/180);x.drawImage(cv,-w/2,-h/2);cv=c2;g=HW.stretch(HW.gray(x.getImageData(0,0,w,h).data))}
+ const PR={auto:[[.2,0],[.35,1]],faint:[[.08,1],[.14,1]],bold:[[.3,0],[.4,0]]}[$('ink').value]||[[.2,0],[.35,1]],thorough=$('mode').value==='thorough';
+ prog('Cleaning ink and removing ruled lines…');
+ const vs=(thorough?PR:[PR[0]]).map(([k,d])=>{let b=HW.rules(HW.sauvola(g,w,h,win,k),w,h);if(d)b=HW.dilate(b,w,h);return b}),L=HW.lines(vs[0],w,h),proc=procPreview(vs[0],w,h,L);
+ if(!L.length)return{text:'',src:'manual',info:['No text lines found. Try another Ink setting, rotate the page, or retake the photo in better light.'],proc};
+ if(!ctx.tw){prog('Loading OCR engine…');ctx.tw=await makeWorker($('lang').value,{tessedit_pageseg_mode:'7',preserve_interword_spaces:'1'});
+  ctx.nw=await makeWorker('eng',{tessedit_pageseg_mode:'7',tessedit_char_whitelist:'0123456789.,/-'})}
+ const out=[];let flagged=0,stated=null,sum=0;
+ for(let i=0;i<L.length;i++){prog('Reading line '+(i+1)+' of '+L.length+'…');const{y0,y1}=L[i],sp=HW.split(vs[0],w,y0,y1);if(!sp)continue;const res=[];
+  for(const b of vs){const wh=await ocr(ctx.tw,crop(b,w,sp.t[0],sp.a?sp.a[1]:sp.t[1],y0,y1));let nm=null;
+   if(sp.a){const r=await ocr(ctx.nw,crop(b,w,sp.a[0],sp.a[1],y0,y1)),n=HW.nums(r.t.replace(/\/-?\s*$/,''))[0];if(n)nm={v:HW.val(n),c:r.c}}res.push({wh,nm})}
+  res.sort((a,b)=>b.wh.c-a.wh.c);let text=res[0].wh.t,tc=res[0].wh.c,amt=null,low=tc<35;const tn=HW.nums(text),lt=tn[tn.length-1],nms=res.map(r=>r.nm).filter(n=>n&&n.c>=45).sort((a,b)=>b.c-a.c);
+  if(nms.length){amt=nms[0].v;if(nms.length>1&&nms[1].v!==amt)low=true;else if(nms.length===1&&vs.length>1)low=true;if(lt){text=strip(text,lt);if(HW.val(lt)!==amt)low=true}}
+  else if(lt){amt=HW.val(lt);text=strip(text,lt);if(tc<50||vs.length>1&&res.length>1&&res[1].wh.t!==res[0].wh.t)low=true}else low=true;
+  if(/^(total|grand|kul|कुल|ਕੁੱਲ)/i.test(text)){if(amt!=null)stated=amt}else if(amt!=null&&!/\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}/.test(text))sum+=amt;
+  if(!text&&amt==null)continue;if(low)flagged++;out.push((low?'⚠ ':'')+(text?text+' ':'')+(amt!=null?amt:''))}
+ const info=[out.length+' lines read'+(thorough?' using 2 cleaning variants':'')+'; '+flagged+' flagged ⚠ for checking.'];
+ if(stated!=null)info.push('Total written on page '+M(stated)+' vs lines read add up to '+M(sum)+(Math.abs(stated-sum)<.01?' ✔ matches':' ⚠ differs by '+M(sum-stated)+' (on two-sided pages compare each side separately)'));
+ info.push('Handwriting is read by an in-browser engine: neat writing works well, cursive may not. Always check ⚠ lines and the amounts.');
+ return{text:out.join('\n'),src:'local',info,proc}}
+function loadScript(u){return new Promise(ok=>{const s=document.createElement('script');s.src=u;s.onload=()=>ok(true);s.onerror=()=>ok(false);document.head.appendChild(s)})}
+async function ensureOCR(){if(typeof Tesseract!=='undefined')return true;if(!navigator.onLine)return false;
+ for(const u of ['https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js','https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js'])if(await loadScript(u)&&typeof Tesseract!=='undefined')return true;return false}
+async function readOne(f,rot,ctx){const img=await loadImg(f),url=rotCanvas(img,rot,900).toDataURL('image/jpeg',.8);
+ if(!(await ensureOCR()))return{text:'',src:'manual',info:['The OCR engine could not be loaded (it needs internet once; afterwards the browser caches it). Type or paste the lines.'],url};
+ try{return{...await hwRead(img,rot,ctx),url}}catch(e){const m=String(e.message||e),blocked=/worker|blob|origin|security|CSP|content security/i.test(m);
+  return{text:'',src:'manual',info:blocked?['This browser window blocks the background worker the OCR engine needs (common inside preview/embedded frames). Download the .html file and open it directly in Chrome, Edge or Firefox (double-click it, or open it from your phone\'s Files app) and reading will work there. Until then, type or paste the lines in the box above.']:['Reading failed: '+m],url}}}
+const endCtx=async c=>{try{if(c.tw)await c.tw.terminate();if(c.nw)await c.nw.terminate()}catch(e){}};
+const nextPg=()=>String(Math.max(0,...S.rows.map(x=>+x.page||0),...P.map(x=>+x.page||0))+1);
+async function handleTextFiles(files){
+ const errs=[];
+ for(const f of files){
+  try{
+   const text=(await readText(f)).replace(/\r\n?/g,'\n').trim();
+   const parsedCount=parse(text,nextPg()).length;
+   P.push({file:null,rot:0,name:f.name,page:nextPg(),text,src:'rewind',info:[parsedCount+' ledger entry line(s) detected from '+f.name+'. Review or edit lines below, then click "Add these lines to ledger" to generate all reports.'],url:''});
+  }catch(e){errs.push(f.name+': '+(e.message||e))}
+ }
+ renderPages();
+ $('ocrmsg').innerHTML=(files.length-errs.length?'Loaded '+(files.length-errs.length)+' .txt file(s). Check the lines below, then click "Add these lines to ledger".':'')+errs.map(x=>'<div class="warn">Could not read '+E(x)+'</div>').join('')}
+function handleFiles(list){const txts=list.filter(f=>/^text\//i.test(f.type)||/\.(txt|text|md)$/i.test(f.name));
+ const ok=list.filter(f=>/^image\/(png|jpe?g|pjpeg)$/i.test(f.type)||/\.(png|jpe?g|jfif)$/i.test(f.name)),bad=list.length-ok.length-txts.length;
+ if(txts.length)handleTextFiles(txts);
+ if(!ok.length){if(!txts.length)$('ocrmsg').innerHTML='<div class="warn">That file is not a PNG, JPEG, or TXT file. Please choose .png, .jpg, .jpeg, or .txt files.</div>';return}
+ $('ocrmsg').innerHTML='Opening '+ok.length+' image page(s)…'+(bad?'<div class="warn">'+bad+' unsupported file(s) skipped.</div>':'');scan(ok)}
+async function scan(files){const ctx={},errs=[];
+ for(const f of files){try{const r=await readOne(f,0,ctx);P.push({file:f,rot:0,name:f.name,page:nextPg(),...r});renderPages()}
+  catch(e){errs.push(f.name+': '+(e.message||e))}}
+ await endCtx(ctx);$('ocrmsg').innerHTML=(files.length-errs.length?'Done. Check the text beside each page, fix mistakes, then add to ledger.':'')+errs.map(x=>'<div class="warn">Could not open '+E(x)+'</div>').join('')}
+async function rescan(i,add){const p=P[i],ctx={};if(add)p.rot=(p.rot+add)%360;try{Object.assign(p,await readOne(p.file,p.rot,ctx))}catch(e){p.info=['Re-read failed: '+(e.message||e)]}await endCtx(ctx);renderPages();$('ocrmsg').textContent='Done.'}
+// ---------- events ----------
+document.addEventListener('change',e=>{const t=e.target,d=t.dataset;
+ if(d.r){const r=S.rows.find(x=>x.id===d.r),f=d.f;let v=t.type==='checkbox'?t.checked:t.value;if(f==='amt'||f==='gst')v=+v;r[f]=v;r.chk=false;if(f==='cat')r.beh='';save();renderAll()}
+ else if(d.pf){S.profile[d.pf]=['gstin','pan'].includes(d.pf)?t.value.trim().toUpperCase():t.value;t.value=S.profile[d.pf];save();gv();renderAll()}
+ else if(d.ob){S.ob[d.ob]=d.ob==='cstock'&&t.value===''?'':(+t.value||0);save();renderAll()}
+ else if(d.sw!==undefined){S.over[d.sw]=t.checked?'V':'F';S.rows.forEach(r=>{if(r.cat===d.sw)r.beh=''});save();renderAll()}
+ else if(d.pg!==undefined)P[d.pg].page=t.value;else if(d.tx!==undefined)P[d.tx].text=t.value;
+ else if(t.id==='biz'){S.biz=+t.value;S.over={};save();renderAll()}else if(t.id==='cur'){S.cur=t.value;save();renderAll()}
+
+ else if(t.id==='files'||t.id==='camf'){const fl=[...t.files];t.value='';handleFiles(fl)}
+ else if(t.id==='txtf'){const fl=[...t.files];t.value='';if(fl.length)handleTextFiles(fl)}
+ else if(t.id==='up'){S.price=+t.value;save();renderAll()}else if(t.id==='uv'){S.vc=+t.value;save();renderAll()}else if(t.id==='gp'){S.goal=+t.value;save();renderAll()}});
+document.addEventListener('input',e=>{const m={f_from:'from',f_to:'to',f_pg:'pg',f_mode:'mode',f_cat:'cat',f_q:'q'}[e.target.id];if(m){F[m]=e.target.value;renderLedger()}});
+document.addEventListener('click',e=>{const t=e.target,d=t.dataset;
+ if(d.tab!==undefined){tab=+d.tab;document.querySelectorAll('.tab').forEach((s,i)=>s.classList.toggle('on',i===tab));document.querySelectorAll('nav button').forEach((b,i)=>b.classList.toggle('on',i===tab));if(tab===5)renderCVP(calc())}
+ else if(d.tg){const r=S.rows.find(x=>x.id===d.tg);r.beh=eb(r)==='F'?'V':'F';save();renderAll()}
+ else if(d.del){S.rows=S.rows.filter(x=>x.id!==d.del);save();renderAll()}
+ else if(d.mx){const[k,i]=d.mx.split('|');const o={F:'V',V:'.','.':'F'};S.mat[k][i]=o[S.mat[k][i]];save();renderAll()}
+ else if(d.add!==undefined){const p=P[d.add];S.rows.push(...parse(p.text,p.page));P.splice(d.add,1);save();renderPages();renderAll();document.querySelector('[data-tab="1"]').click()}
+ else if(d.rot!==undefined){rescan(+d.rot,90)}else if(d.rs!==undefined){rescan(+d.rs,0)}
+ else if(d.rm!==undefined){P.splice(d.rm,1);renderPages()}});
+$('pick').onclick=()=>$('files').click();$('cam').onclick=()=>$('camf').click();$('impTxt').onclick=()=>$('txtf').click();
+$('pasteTxt').onclick=async()=>{let text='';try{if(navigator.clipboard&&navigator.clipboard.readText)text=(await navigator.clipboard.readText())||''}catch(e){}
+ P.push({file:null,rot:0,name:'Rewind AI / Pasted Text',page:nextPg(),text:text.trim(),src:'rewind',info:[text.trim()?'Text pasted from clipboard. Review or edit lines below, then click "Add these lines to ledger".':'Paste the text copied from Rewind AI into the box below, then click "Add these lines to ledger".'],url:''});
+ renderPages();$('ocrmsg').textContent='Ready for Rewind AI text. Review or paste lines below, then add to ledger.'};
+{const d=$('drop');['dragenter','dragover'].forEach(n=>d.addEventListener(n,e=>{e.preventDefault();d.style.background='#e0f2fe'}));['dragleave','drop'].forEach(n=>d.addEventListener(n,e=>{e.preventDefault();d.style.background='#f8fafc'}));
+ d.addEventListener('drop',e=>handleFiles([...(e.dataTransfer?e.dataTransfer.files:[])]))}
+document.addEventListener('paste',e=>{const fl=[...(e.clipboardData?e.clipboardData.items:[])].filter(i=>i.kind==='file'&&i.type.startsWith('image/')).map(i=>i.getAsFile()).filter(Boolean);if(fl.length){tab=0;document.querySelector('[data-tab="0"]').click();handleFiles(fl)}});
+addEventListener('error',e=>{$('ocrmsg').innerHTML='<div class="warn">Something went wrong: '+E(e.message)+'</div>'});addEventListener('unhandledrejection',e=>{$('ocrmsg').innerHTML='<div class="warn">Something went wrong: '+E((e.reason&&e.reason.message)||e.reason)+'</div>'});
+$('qb').onclick=()=>{const a=+$('qa').value,t=$('qt').value.trim();if(!(a>0)||!t){alert('Enter a description and an amount');return}
+ const r=mk(t,a,$('qd').value||new Date().toISOString().slice(0,10),'M',+$('qg').value,$('qi').checked,$('qc').value||undefined);r.mode=$('qm').value!=='Cash'?$('qm').value:r.mode;
+ S.rows.push(r);save();$('qt').value=$('qa').value='';renderAll()};
+function dl(name,txt,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click()}
+$('bExp').onclick=()=>dl('bahi-khata-backup.json',JSON.stringify(S,null,1),'application/json');
+$('bImp').onclick=()=>$('impf').click();
+$('impf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);if(!j.rows)throw 0;S=Object.assign(def(),j);save();init()}catch(x){alert('Not a valid backup file')}};r.readAsText(f)};
+$('bCsv').onclick=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"';dl('ledger.csv',['Date,Page,Description,Category,Type,CostBehavior,Mode,Amount,GST%,GSTInclusive'].concat(S.rows.map(r=>[r.date,r.page,r.desc,r.cat,C[r.cat][0],isCost(r.cat)?eb(r):'',r.mode,r.amt,r.gst,r.incl].map(q).join(','))).join('\n'),'text/csv')};
+$('bRst').onclick=()=>{if(confirm('Delete ALL data in this browser? Export a backup first.')){try{localStorage.removeItem('bk_v1')}catch(e){}S=def();init()}};
+$('bSmp').onclick=()=>{if(S.rows.length&&!confirm('Add sample entries to existing data?'))return;
+ S.ob=Object.assign(S.ob,{cash:50000,bank:120000,stock:150000,recv:40000,pay:60000,loan:200000,fa:300000,cstock:175000});
+ const pg=[`01/10/2026\nSale 45000 GST 18\nBikri cash 12500 gst 5\nPurchase maal 30000 gst 18 UPI\nFreight bhada 2500\nMajdoori 6000\nRent kiraya 18000`,
+ `05/10/26\nSale udhaar 38000 gst 18\nCash recd Bikri 9000\nKharida purchase udhaar 22000 gst 12\nSalary tankhwa 25000\nBijli bill 4200 gst 18\nPacking 1800 gst 12`,
+ `12-10-2026\nSale gpay 52000 gst 18\nUdhaar recd 20000\nInsurance 3500\nLoan EMI interest 6500\nDelivery commission 2200\nDiesel fuel 3000\nPhone internet 1200 gst 18\nDrawings ghar 5000\nCreditors paid 15000 UPI\nSale 28000 gst 18\nKharch misc 900`];
+ pg.forEach((t,i)=>S.rows.push(...parse(t,i+1)));S.price=500;S.goal=100000;save();init()};
+function init(){profUI();$('biz').innerHTML=BIZ.map((b,i)=>`<option value="${i}" ${i===S.biz?'selected':''}>${b}</option>`).join('');$('cur').value=S.cur;
+ $('nav').innerHTML=['Scan & Entry','Master Ledger','Profit & Loss','Balance Sheet','Fixed vs Variable','CVP / Break-Even'].map((n,i)=>`<button data-tab="${i}" class="${i===tab?'on':''}">${n}</button>`).join('');
+ document.querySelectorAll('.tab').forEach((s,i)=>s.classList.toggle('on',i===tab));
+ $('ob').innerHTML=[['cash','Opening Cash in Hand'],['bank','Opening Bank / UPI'],['stock','Opening Stock / Inventory'],['recv','Opening Receivables (Udhaar)'],['pay','Opening Payables'],['loan','Opening Loans'],['fa','Opening Fixed Assets'],['cstock','Closing Stock (blank = same)']].map(([k,l])=>`<label class="lbl">${l}<br><input type="number" step="any" data-ob="${k}" value="${S.ob[k]}" style="width:100%"></label>`).join('');
+ $('up').value=S.price||'';$('uv').value=S.vc||'';$('gp').value=S.goal||'';$('qd').value=new Date().toISOString().slice(0,10);renderAll()}
+function net(){$('net').textContent=navigator.onLine?'Online':'Offline – manual entry works';}
+addEventListener('online',net);addEventListener('offline',net);net();
+if(window.NOOCR||window.NOCH||typeof Tesseract==='undefined'||typeof Chart==='undefined')setTimeout(()=>{if(typeof Tesseract==='undefined')$('ocrmsg').textContent='OCR engine not loaded (offline). Manual entry and reports work normally.'},800);
+init();
+</script></body></html>
